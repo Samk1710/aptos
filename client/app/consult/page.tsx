@@ -41,16 +41,23 @@ export default function ConsultPage() {
 
     setIsLoading(true)
     setResponse("")
-
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-
-    const responses = [
-      `As ${selectedLeader.name}, I believe that ${topic.toLowerCase()} requires careful consideration of both immediate needs and long-term consequences. We must approach this challenge with wisdom, compassion, and unwavering commitment to justice. History teaches us that sustainable solutions emerge from understanding diverse perspectives and finding common ground.`,
-      `In my experience, ${topic.toLowerCase()} is a matter that demands both courage and patience. The path forward may not be easy, but with determination and the right principles, we can overcome any obstacle. True leadership means making difficult decisions for the greater good, even when they are unpopular.`,
-      `The question of ${topic.toLowerCase()} reminds me of the struggles we faced in my time. True leadership lies in finding the balance between wisdom and action, ensuring our decisions serve the greater good. We must learn from the past while adapting to present realities.`,
-    ]
-
-    setResponse(responses[Math.floor(Math.random() * responses.length)])
+    const data=await fetch("/api/ai-character", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: topic,
+        leader: selectedLeader,
+      }),
+    })
+    if (!data.ok) {
+      setResponse("Failed to generate response. Please try again.")
+      setIsLoading(false)
+      return
+    }
+    const result = await data.json()
+    setResponse(result.result)
     setIsLoading(false)
   }
 
