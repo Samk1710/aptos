@@ -1,7 +1,8 @@
 import type React from "react"
 import type { Metadata } from "next"
 import "./globals.css"
-import { WalletProvider } from "@/contexts/WalletContext"
+import { WalletProvider } from "@/components/WalletProvider"
+import {ReactQueryClientProvider} from "@/components/ReactQueryClientProvider"
 import Navigation from "@/components/Navigation"
 import { Playfair_Display, Crimson_Text, Old_Standard_TT } from "next/font/google"
 
@@ -43,10 +44,12 @@ export default function RootLayout({
       <body className="animate-flicker">
         <div className="watermark">LEADERS' GAZETTE</div>
         <div className="min-h-screen">
-          <WalletProvider>
-            <Navigation />
-            <main>{children}</main>
-          </WalletProvider>
+          <ReactQueryClientProvider>
+            <WalletProvider>
+              <Navigation />
+              <main>{children}</main>
+            </WalletProvider>
+          </ReactQueryClientProvider>
         </div>
       </body>
     </html>

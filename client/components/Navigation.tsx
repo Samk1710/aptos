@@ -4,7 +4,7 @@ import React from "react"
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useWallet } from "@/contexts/WalletContext"
+import { useWallet } from "@aptos-labs/wallet-adapter-react"
 import {
   Bars3Icon,
   XMarkIcon,
@@ -30,7 +30,7 @@ const navigation = [
 
 export default function Navigation() {
   const pathname = usePathname()
-  const { isConnected, address, connectWallet, disconnectWallet } = useWallet()
+  const { account, connected, disconnect, wallet, connect } = useWallet()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const currentDate = new Date().toLocaleDateString("en-US", {
@@ -45,6 +45,7 @@ export default function Navigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Masthead */}
         <div className="masthead">
+          
           <div className="text-xs newspaper-caption mb-2">{currentDate}</div>
           <h1 className="text-3xl md:text-4xl newspaper-headline tracking-wider">THE WORLD LEADERS' GAZETTE</h1>
           <div className="text-xs newspaper-caption mt-2 italic">
@@ -78,19 +79,19 @@ export default function Navigation() {
 
           {/* Wallet Connection */}
           <div className="flex items-center space-x-4">
-            {isConnected ? (
+            {connected ? (
               <>
                 <div className="hidden sm:block bg-green-100 px-4 py-2 border border-green-600 newspaper-body">
                   <span className="text-sm font-semibold text-green-800">
-                    Connected: {address?.slice(0, 6)}...{address?.slice(-4)}
+                    Connected: {wallet?.accounts[0]?.address.slice(0, 6)}... {wallet?.accounts[0]?.address.slice(-4)}
                   </span>
                 </div>
-                <button onClick={disconnectWallet} className="newspaper-btn-secondary text-xs">
+                <button onClick={disconnect} className="newspaper-btn-secondary text-xs">
                   Disconnect
                 </button>
               </>
             ) : (
-              <button onClick={connectWallet} className="newspaper-btn-primary text-xs">
+              <button onClick={()=>{connect("Petra")}} className="newspaper-btn-primary text-xs">
                 Connect Wallet
               </button>
             )}
