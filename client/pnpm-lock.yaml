@@ -122,6 +122,9 @@ importers:
       autoprefixer:
         specifier: ^10.4.20
         version: 10.4.21(postcss@8.5.6)
+      axios:
+        specifier: ^1.10.0
+        version: 1.10.0
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -1774,9 +1777,12 @@ packages:
   axios@1.10.0:
     resolution: {integrity: sha512-/1xYAC4MP/HEG+3duIhFr4ZQXR4sQXOIe+o6sdqzeykGLx6Upp/1p8MHqhINOvGeP7xyNHe7tsiJByc4SSVUxw==}
 
+<<<<<<< HEAD
   axios@1.7.4:
     resolution: {integrity: sha512-DukmaFRnY6AzAALSH4J2M3k6PkaC+MfaAGdEERRWcC9q3/TWQwLpHR8ZRLKTdQ3aBDL64EdluRDjJqKw+BPZEw==}
 
+=======
+>>>>>>> 41a0a1fa3314d9adaeb277983f7da1cccdcfd069
   balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
 
@@ -2061,6 +2067,7 @@ packages:
   defaults@1.0.4:
     resolution: {integrity: sha512-eFuaLoy/Rxalv2kr+lqMlUnrDWV+3j4pljOIJgLIhI058IQfWJ7vXhyEIHu+HtC738klGALYxOKDO0bQP3tg8A==}
 
+<<<<<<< HEAD
   defer-to-connect@2.0.1:
     resolution: {integrity: sha512-4tvttepXG1VaYGrRibk5EwJd1t4udunSOVMdLSAL6mId1ix438oPwPZMALY41FCijukO1L0twNcGsdzS7dHgDg==}
     engines: {node: '>=10'}
@@ -2069,6 +2076,8 @@ packages:
     resolution: {integrity: sha512-ReEBKkIfe4ya47wlPYf/gu5ib6yUG0/Aez0JQZQz94kiWtRQvZIQbTiehsnwHvLSWJnQdhVeqYue7Id1dKr0qw==}
     engines: {node: '>=10'}
 
+=======
+>>>>>>> 41a0a1fa3314d9adaeb277983f7da1cccdcfd069
   delayed-stream@1.0.0:
     resolution: {integrity: sha512-ZySD7Nf91aLB0RxL4KGrKHBXl7Eds1DAmEdcoVawXnLD7SDhpNgtuII2aAkg7a7QS41jxPSZ17p4VdGnMHk3MQ==}
     engines: {node: '>=0.4.0'}
@@ -2157,12 +2166,15 @@ packages:
     resolution: {integrity: sha512-j6vWzfrGVfyXxge+O0x5sh6cvxAog0a/4Rdd2K36zCMV5eJ+/+tOAngRO8cODMNWbVRdVlmGZQL2YS3yR8bIUA==}
     engines: {node: '>= 0.4'}
 
+<<<<<<< HEAD
   es6-promise@4.2.8:
     resolution: {integrity: sha512-HJDGx5daxeIvxdBxvG2cb9g4tEvwIk3i8+nhX0yGrYmZUzbkdg8QbDevheDB8gd0//uPj4c1EQua8Q+MViT0/w==}
 
   es6-promisify@5.0.0:
     resolution: {integrity: sha512-C+d6UdsYDk0lMebHNR4S2NybQMMngAOnOwYBQjTOiv0MkoJMP0Myw2mgpDLBcpfCmRLxyFqYhS/CfOENq4SJhQ==}
 
+=======
+>>>>>>> 41a0a1fa3314d9adaeb277983f7da1cccdcfd069
   escalade@3.2.0:
     resolution: {integrity: sha512-WUj2qlxaQtO4g6Pq5c29GTcWGDyd8itL8zTlipgECz3JesAiiOKotd8JU6otB3PACgG6xkJUyVhboMS+bje/jA==}
     engines: {node: '>=6'}
@@ -2273,10 +2285,13 @@ packages:
     resolution: {integrity: sha512-gIXjKqtFuWEgzFRJA9WCQeSJLZDjgJUOMCMzxtvFq/37KojM1BFGufqsCy0r4qSQmYLsZYMeyRqzIWOMup03sw==}
     engines: {node: '>=14'}
 
+<<<<<<< HEAD
   form-data@4.0.0:
     resolution: {integrity: sha512-ETEklSGi5t0QMZuiXoA/Q6vcnxcLQP5vdugSpuAyi6SVGi2clPPp+xgEhuMaHC+zGgn31Kd235W35f7Hykkaww==}
     engines: {node: '>= 6'}
 
+=======
+>>>>>>> 41a0a1fa3314d9adaeb277983f7da1cccdcfd069
   form-data@4.0.3:
     resolution: {integrity: sha512-qsITQPfmvMOSAdeyZ+12I1c+CKSstAFAwu+97zrnWAbIr5u8wfsExUzCesVLC8NgHuRUqNN4Zy6UPWUTRGslcA==}
     engines: {node: '>= 6'}
@@ -5482,6 +5497,7 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
+<<<<<<< HEAD
   axios@1.7.4:
     dependencies:
       follow-redirects: 1.15.9
@@ -5490,6 +5506,8 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
+=======
+>>>>>>> 41a0a1fa3314d9adaeb277983f7da1cccdcfd069
   balanced-match@1.0.2: {}
 
   base-x@3.0.11:
@@ -5763,10 +5781,13 @@ snapshots:
     dependencies:
       clone: 1.0.4
 
+<<<<<<< HEAD
   defer-to-connect@2.0.1: {}
 
   delay@5.0.0: {}
 
+=======
+>>>>>>> 41a0a1fa3314d9adaeb277983f7da1cccdcfd069
   delayed-stream@1.0.0: {}
 
   depd@2.0.0: {}
@@ -5843,12 +5864,15 @@ snapshots:
       has-tostringtag: 1.0.2
       hasown: 2.0.2
 
+<<<<<<< HEAD
   es6-promise@4.2.8: {}
 
   es6-promisify@5.0.0:
     dependencies:
       es6-promise: 4.2.8
 
+=======
+>>>>>>> 41a0a1fa3314d9adaeb277983f7da1cccdcfd069
   escalade@3.2.0: {}
 
   escape-html@1.0.3: {}
@@ -5989,12 +6013,15 @@ snapshots:
       cross-spawn: 7.0.6
       signal-exit: 4.1.0
 
+<<<<<<< HEAD
   form-data@4.0.0:
     dependencies:
       asynckit: 0.4.0
       combined-stream: 1.0.8
       mime-types: 2.1.35
 
+=======
+>>>>>>> 41a0a1fa3314d9adaeb277983f7da1cccdcfd069
   form-data@4.0.3:
     dependencies:
       asynckit: 0.4.0
