@@ -4,11 +4,12 @@ import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-import { leaders } from "@/lib/data"
+// import { leaders } from "@/lib/data"
 import { SparklesIcon, DocumentTextIcon } from "@heroicons/react/24/outline"
 
 export default function ConsultPage() {
   const searchParams = useSearchParams()
+   const leaders=localStorage.getItem("leaders") ? JSON.parse(localStorage.getItem("leaders")!) : []
   const [selectedLeader, setSelectedLeader] = useState(leaders[0])
   const [topic, setTopic] = useState("")
   const [response, setResponse] = useState("")

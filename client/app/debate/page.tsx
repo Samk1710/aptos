@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-import { leaders } from "@/lib/data"
+// import { leaders } from "@/lib/data"
 import { PlayIcon, DocumentTextIcon } from "@heroicons/react/24/outline"
 
 interface DebateMessage {
@@ -15,6 +15,7 @@ interface DebateMessage {
 
 export default function DebatePage() {
   const searchParams = useSearchParams()
+  const leaders=localStorage.getItem("leaders") ? JSON.parse(localStorage.getItem("leaders")!) : []
   const [leader1, setLeader1] = useState(leaders[0])
   const [leader2, setLeader2] = useState(leaders[1])
   const [topic, setTopic] = useState("")
@@ -22,7 +23,6 @@ export default function DebatePage() {
   const [isDebating, setIsDebating] = useState(false)
   const [debateMessages, setDebateMessages] = useState<DebateMessage[]>([])
   const [debateEnded, setDebateEnded] = useState(false)
-
   const currentDate = new Date().toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",

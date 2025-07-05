@@ -1,11 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { useWallet } from "@/contexts/WalletContext"
+import { useWallet } from "@aptos-labs/wallet-adapter-react"
 import { mockNFTs } from "@/lib/data"
 
 export default function GalleryPage() {
-  const { isConnected, address } = useWallet()
+  const { connected, wallet,account } = useWallet()
   const [filter, setFilter] = useState("all")
 
   const currentDate = new Date().toLocaleDateString("en-US", {
@@ -14,7 +14,7 @@ export default function GalleryPage() {
     day: "numeric",
   })
 
-  if (!isConnected) {
+  if (!connected) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="dateline text-center">{currentDate} — Archives Bureau</div>
@@ -47,7 +47,7 @@ export default function GalleryPage() {
 
         <div className="flex flex-col sm:flex-row justify-between items-center">
           <div className="newspaper-body text-lg">
-            <strong>Archive Owner:</strong> {address?.slice(0, 6)}...{address?.slice(-4)}
+            <strong>Archive Owner:</strong> {wallet?.accounts[0]?.address.slice(0, 6)}...{wallet?.accounts[0]?.address.slice(-4)}
           </div>
           <div className="flex items-center space-x-4 mt-4 sm:mt-0">
             <span className="news-tag">{mockNFTs.length} Records</span>

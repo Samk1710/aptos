@@ -1,90 +1,87 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
+import { useState } from "react"
+import Image from "next/image"
 
-export default function NewsSearch() {
-  const [query, setQuery] = useState('')
-  const [results, setResults] = useState<any[]>([])
+interface Leader {
+  name: string
+  prompt: string
+  image: string
+  id: string
+}
+
+export default function LeaderPage() {
+  const [name, setName] = useState("")
   const [loading, setLoading] = useState(false)
+  const [leader, setLeader] = useState<Leader | null>(null)
+  const [error, setError] = useState("")
 
-  const fetchNews = async () => {
-    if (!query) return
+  const handleSubmit = async () => {
     setLoading(true)
-    console.log('Fetching news for query:', query)
+    setError("")
+    setLeader(null)
 
     try {
-      const res = await fetch(`/api/news?q=${encodeURIComponent(query)}`)
-      const data = await res.json()
-      console.log('Fetched data:', data)
+      const res = await fetch("/api/ai-personality-generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name }),
+      })
 
-      setResults(data.news_results || [])
-    } catch (error) {
-      console.error('Fetch error:', error)
-      setResults([])
+      if (!res.ok) {
+        const errData = await res.json()
+        throw new Error(errData.error || "Something went wrong")
+      }
+
+      const data: Leader = await res.json()
+      setLeader(data)
+
+      // Save to localStorage
+      const stored = localStorage.getItem("leaders")
+      const leaders: Leader[] = stored ? JSON.parse(stored) : []
+      leaders.push(data)
+      localStorage.setItem("leaders", JSON.stringify(leaders))
+    } catch (err: any) {
+      setError(err.message)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Search News</h1>
+    <div className="max-w-xl mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-4">Generate Political Leader</h1>
+      <input
+        type="text"
+        placeholder="Enter leader name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        className="w-full p-2 border rounded mb-4"
+      />
+      <button
+        onClick={handleSubmit}
+        disabled={loading || !name.trim()}
+        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
+      >
+        {loading ? "Generating..." : "Generate"}
+      </button>
 
-      {/* Search Input */}
-      <div className="flex gap-2 mb-6">
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="e.g. UPSC, cricket, politics"
-          className="flex-1 border p-2 rounded-lg"
-        />
-        <button
-          onClick={fetchNews}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-        >
-          Search
-        </button>
-      </div>
+      {error && <p className="text-red-600 mt-4">{error}</p>}
 
-      {/* Loading Text */}
-      {loading && <p>Loading news...</p>}
-
-      {/* News Results */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-        {results.map((news, idx) => (
-          <a
-            key={idx}
-            href={news.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="border rounded-lg p-4 hover:shadow-md transition bg-white"
-          >
-            <div className="flex items-start gap-4">
-              {news.thumbnail ? (
-                <img
-                  src={news.thumbnail}
-                  alt="thumbnail"
-                  className="w-24 h-24 object-cover rounded"
-                />
-              ) : (
-                <div className="w-24 h-24 bg-gray-200 rounded" />
-              )}
-              <div className="flex flex-col">
-                <h2 className="text-lg font-semibold">{news.title}</h2>
-                <p className="text-sm text-gray-500 mt-1">
-                  {news.source?.name} •{' '}
-                  {news.date ? new Date(news.date).toLocaleDateString() : ''}
-                </p>
-              </div>
-            </div>
-          </a>
-        ))}
-      </div>
-
-      {/* No Results Fallback */}
-      {!loading && results.length === 0 && query && (
-        <p className="text-gray-500 mt-4">No results found.</p>
+      {leader && (
+        <div className="mt-6 border rounded-lg p-4">
+          <h2 className="text-xl font-semibold">{leader.name}</h2>
+          <p className="text-sm mt-2">{leader.prompt}</p>
+          <Image
+            src={leader.image}
+            alt={leader.name}
+            width={256}
+            height={256}
+            className="mt-4 rounded border"
+          />
+        </div>
       )}
     </div>
   )

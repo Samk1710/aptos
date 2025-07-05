@@ -4,12 +4,12 @@ import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-import { useWallet } from "@/contexts/WalletContext"
+import { useWallet } from "@aptos-labs/wallet-adapter-react"
 import { leaders } from "@/lib/data"
 
 export default function MintPage() {
   const searchParams = useSearchParams()
-  const { isConnected, connectWallet, mintNFT } = useWallet()
+  const { connected, connectWallet, mintNFT } = useWallet()
   const [mintData, setMintData] = useState<any>(null)
   const [isMinting, setIsMinting] = useState(false)
   const [mintSuccess, setMintSuccess] = useState(false)
