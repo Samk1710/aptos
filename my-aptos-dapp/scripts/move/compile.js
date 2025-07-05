@@ -15,7 +15,7 @@ async function compile() {
     packageDirectoryPath: "contract",
     namedAddresses: {
       // Compile module with account address
-      message_board_addr: process.env.MODULE_PUBLISHER_ACCOUNT_ADDRESS,
+      voice_nft: process.env.MODULE_PUBLISHER_ACCOUNT_ADDRESS,
     },
   });
 }

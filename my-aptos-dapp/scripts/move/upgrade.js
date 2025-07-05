@@ -16,7 +16,7 @@ async function publish() {
     objectAddress: process.env.MODULE_ADDRESS,
     namedAddresses: {
       // Upgrade module from an object
-      message_board_addr: process.env.MODULE_ADDRESS,
+      voice_nft: process.env.MODULE_ADDRESS,
     },
     extraArguments: [`--private-key=${process.env.MODULE_PUBLISHER_ACCOUNT_PRIVATE_KEY}`,`--url=${aptosSDK.NetworkToNodeAPI[process.env.APP_NETWORK]}`],
   });
