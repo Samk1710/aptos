@@ -31,63 +31,6 @@ interface TrendingTopic {
   trend: "up" | "down"
 }
 
-const mockNews: NewsItem[] = [
-  {
-    id: 1,
-    headline: "Global Climate Summit Reaches Historic Agreement on Carbon Emissions",
-    source: "Reuters Telegraph",
-    publishedAt: "2 hours ago",
-    category: "Environment",
-    thumbnail: "/placeholder.svg?height=200&width=300",
-    summary: "World leaders unite on ambitious climate targets for 2030",
-  },
-  {
-    id: 2,
-    headline: "AI Regulation Framework Proposed by European Union",
-    source: "London Times",
-    publishedAt: "4 hours ago",
-    category: "Technology",
-    thumbnail: "/placeholder.svg?height=200&width=300",
-    summary: "New legislation aims to govern artificial intelligence development",
-  },
-  {
-    id: 3,
-    headline: "Ukraine Peace Talks Resume in Geneva",
-    source: "International Herald",
-    publishedAt: "6 hours ago",
-    category: "World",
-    thumbnail: "/placeholder.svg?height=200&width=300",
-    summary: "International mediators facilitate diplomatic discussions",
-  },
-  {
-    id: 4,
-    headline: "Economic Inequality Reaches Record Levels in Developed Nations",
-    source: "Financial Gazette",
-    publishedAt: "8 hours ago",
-    category: "Economics",
-    thumbnail: "/placeholder.svg?height=200&width=300",
-    summary: "Wealth gap widens despite economic recovery efforts",
-  },
-  {
-    id: 5,
-    headline: "Democratic Institutions Under Pressure Worldwide",
-    source: "Political Observer",
-    publishedAt: "10 hours ago",
-    category: "Politics",
-    thumbnail: "/placeholder.svg?height=200&width=300",
-    summary: "Report highlights threats to democratic governance globally",
-  },
-  {
-    id: 6,
-    headline: "Breakthrough in Renewable Energy Storage Technology",
-    source: "Science Journal",
-    publishedAt: "12 hours ago",
-    category: "Technology",
-    thumbnail: "/placeholder.svg?height=200&width=300",
-    summary: "New battery technology promises to revolutionize clean energy",
-  },
-]
-
 const trendingTopics: TrendingTopic[] = [
   { id: 1, topic: "Climate Action", engagement: 15420, trend: "up" },
   { id: 2, topic: "AI Ethics", engagement: 12350, trend: "up" },
@@ -99,8 +42,8 @@ const trendingTopics: TrendingTopic[] = [
 const categories = ["All", "World", "Politics", "Technology", "Environment", "Economics"]
 
 export default function EventsPage() {
-  const [news, setNews] = useState<NewsItem[]>(mockNews)
-  const [filteredNews, setFilteredNews] = useState<NewsItem[]>(mockNews)
+  const [news, setNews] = useState<NewsItem[]>([])
+  const [filteredNews, setFilteredNews] = useState<NewsItem[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("All")
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -115,13 +58,36 @@ export default function EventsPage() {
   })
 
   useEffect(() => {
+    const fetchNews = async () => {
+      try {
+        const res = await fetch(`/api/news?q=${encodeURIComponent(searchTerm || "current affairs")}`)
+        const data = await res.json()
+        const mapped = (data.news_results || []).map((item: any, index: number) => ({
+          id: index + 1,
+          headline: item.title,
+          source: item.source?.name || "Unknown",
+          publishedAt: item.date ? new Date(item.date).toLocaleDateString() : "",
+          category: "World",
+          thumbnail: item.thumbnail || "/placeholder.svg",
+          summary: item.title,
+        }))
+        setNews(mapped)
+      } catch (err) {
+        console.error("Failed to fetch news", err)
+      }
+    }
+
+    fetchNews()
+  }, [searchTerm])
+
+  useEffect(() => {
     let filtered = news
 
     if (searchTerm) {
       filtered = filtered.filter(
         (item) =>
           item.headline.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          item.summary.toLowerCase().includes(searchTerm.toLowerCase()),
+          item.summary.toLowerCase().includes(searchTerm.toLowerCase())
       )
     }
 
