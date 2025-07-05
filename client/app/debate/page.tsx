@@ -1,309 +1,653 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { Loader2, Play, Users, Plus, UserPlus } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 import Image from "next/image"
-import Link from "next/link"
-// import { leaders } from "@/lib/data"
-import { PlayIcon, DocumentTextIcon } from "@heroicons/react/24/outline"
+
+interface Leader {
+  name: string
+  prompt?: string
+  image: string
+  id: string
+  specialty?: string
+}
 
 interface DebateMessage {
-  speaker: string
-  message: string
+  id: string
+  speaker: "bot1" | "bot2" | "conclusion"
+  content: string
   timestamp: Date
 }
 
-export default function DebatePage() {
+interface DebateState {
+  topic: string
+  messages: DebateMessage[]
+  isDebating: boolean
+  currentRound: number
+  phase: "setup" | "debating" | "concluded"
+}
+
+export default function DebateSystem() {
   const searchParams = useSearchParams()
-  const leaders=localStorage.getItem("leaders") ? JSON.parse(localStorage.getItem("leaders")!) : []
-  const [leader1, setLeader1] = useState(leaders[0])
-  const [leader2, setLeader2] = useState(leaders[1])
-  const [topic, setTopic] = useState("")
-  const [currentTopic, setCurrentTopic] = useState("")
-  const [isDebating, setIsDebating] = useState(false)
-  const [debateMessages, setDebateMessages] = useState<DebateMessage[]>([])
-  const [debateEnded, setDebateEnded] = useState(false)
+  const [availableLeaders, setAvailableLeaders] = useState<Leader[]>([])
+  const [leader1, setLeader1] = useState<Leader | null>(null)
+  const [leader2, setLeader2] = useState<Leader | null>(null)
+  const [showCreateAgent, setShowCreateAgent] = useState(false)
+  const [newAgentName, setNewAgentName] = useState("")
+  const [creatingAgent, setCreatingAgent] = useState(false)
+  const [createError, setCreateError] = useState("")
+  const [debateState, setDebateState] = useState<DebateState>({
+    topic: "",
+    messages: [],
+    isDebating: false,
+    currentRound: 0,
+    phase: "setup",
+  })
+
   const currentDate = new Date().toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",
   })
 
+  // Load leaders from localStorage on component mount
   useEffect(() => {
-    const topicParam = searchParams.get("topic")
-    if (topicParam) {
-      setTopic(topicParam)
-      setCurrentTopic(topicParam)
+    const storedLeaders =
+      typeof window !== "undefined" && localStorage.getItem("leaders")
+        ? JSON.parse(localStorage.getItem("leaders")!)
+        : []
+
+    setAvailableLeaders(storedLeaders)
+
+    if (storedLeaders.length > 0) {
+      setLeader1(storedLeaders[0])
+      setLeader2(storedLeaders[1] || storedLeaders[0])
     }
-  }, [searchParams])
+  }, [])
 
-  const startDebate = async () => {
-    if (!topic.trim()) return
+  const handleCreateAgent = async () => {
+    if (!newAgentName.trim()) return
 
-    setIsDebating(true)
-    setDebateMessages([])
-    setDebateEnded(false)
+    setCreatingAgent(true)
+    setCreateError("")
 
-    // Simulate debate messages
-    const messages = [
-      {
-        speaker: leader1.name,
-        message: `I believe that ${topic.toLowerCase()} requires a measured approach based on historical precedent and moral principles. We must learn from past experiences to guide our present decisions.`,
-      },
-      {
-        speaker: leader2.name,
-        message: `While I respect that perspective, I think we must also consider the urgent realities of our current situation and act decisively. Sometimes bold action is necessary to create meaningful change.`,
-      },
-      {
-        speaker: leader1.name,
-        message: `Decisive action without proper consideration of consequences has led to many historical mistakes. We must balance urgency with wisdom, ensuring our actions serve the greater good.`,
-      },
-      {
-        speaker: leader2.name,
-        message: `But we cannot be paralyzed by the past. True leadership means taking calculated risks and making difficult decisions when the moment demands it.`,
-      },
-      {
-        speaker: leader1.name,
-        message: `I agree that leadership requires courage, but it also demands patience and the ability to unite people around common values and shared objectives.`,
-      },
-      {
-        speaker: leader2.name,
-        message: `On that point, we find common ground. The challenge lies in determining what truly serves the greater good in these complex times.`,
-      },
-    ]
+    try {
+      const res = await fetch("/api/ai-personality-generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name: newAgentName }),
+      })
 
-    for (let i = 0; i < messages.length; i++) {
-      await new Promise((resolve) => setTimeout(resolve, 3000))
-      setDebateMessages((prev) => [...prev, { ...messages[i], timestamp: new Date() }])
+      if (!res.ok) {
+        const errData = await res.json()
+        throw new Error(errData.error || "Failed to create agent")
+      }
+
+      const newLeader: Leader = await res.json()
+
+      // Save to localStorage
+      const stored = localStorage.getItem("leaders")
+      const storedLeaders: Leader[] = stored ? JSON.parse(stored) : []
+      storedLeaders.push(newLeader)
+      localStorage.setItem("leaders", JSON.stringify(storedLeaders))
+
+      // Update available leaders (remove defaultLeaders reference)
+      setAvailableLeaders(storedLeaders)
+
+      // Reset form
+      setNewAgentName("")
+      setShowCreateAgent(false)
+
+      // Auto-select the new agent if no agents were selected
+      if (!leader1) setLeader1(newLeader)
+      else if (!leader2) setLeader2(newLeader)
+    } catch (err: any) {
+      setCreateError(err.message)
+    } finally {
+      setCreatingAgent(false)
     }
-
-    setIsDebating(false)
-    setDebateEnded(true)
   }
 
-  const endDebate = () => {
-    setIsDebating(false)
-    setDebateEnded(true)
+  const startDebate = async () => {
+    if (!debateState.topic.trim() || !leader1 || !leader2) return
+
+    setDebateState((prev) => ({
+      ...prev,
+      isDebating: true,
+      phase: "debating",
+      messages: [],
+      currentRound: 0,
+    }))
+
+    try {
+      const response = await fetch("/api/ai-debate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ topic: debateState.topic, leader1: leader1, leader2: leader2 }),
+      })
+
+      if (!response.ok) throw new Error("Failed to start debate")
+
+      const reader = response.body?.getReader()
+      if (!reader) throw new Error("No reader available")
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = new TextDecoder().decode(value)
+        const lines = chunk.split("\n").filter((line) => line.trim())
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6))
+              if (data.type === "message") {
+                setDebateState((prev) => ({
+                  ...prev,
+                  messages: [
+                    ...prev.messages,
+                    {
+                      id: Date.now().toString(),
+                      speaker: data.speaker,
+                      content: data.content,
+                      timestamp: new Date(),
+                    },
+                  ],
+                  currentRound: data.round,
+                }))
+              } else if (data.type === "conclusion") {
+                setDebateState((prev) => ({
+                  ...prev,
+                  messages: [
+                    ...prev.messages,
+                    {
+                      id: Date.now().toString(),
+                      speaker: "conclusion",
+                      content: data.content,
+                      timestamp: new Date(),
+                    },
+                  ],
+                  phase: "concluded",
+                  isDebating: false,
+                }))
+              } else if (data.type === "complete") {
+                setDebateState((prev) => ({
+                  ...prev,
+                  isDebating: false,
+                  phase: "concluded",
+                }))
+              }
+            } catch (e) {
+              console.error("Error parsing SSE data:", e)
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error starting debate:", error)
+      setDebateState((prev) => ({
+        ...prev,
+        isDebating: false,
+        phase: "setup",
+      }))
+    }
+  }
+
+  const resetDebate = () => {
+    setDebateState({
+      topic: "",
+      messages: [],
+      isDebating: false,
+      currentRound: 0,
+      phase: "setup",
+    })
+  }
+
+  const getSpeakerInfo = (speaker: string) => {
+    switch (speaker) {
+      case "bot1":
+        return { name: leader1?.name || "Agent 1", color: "bg-gray-800", img: leader1?.image }
+      case "bot2":
+        return { name: leader2?.name || "Agent 2", color: "bg-gray-600", img: leader2?.image }
+      case "conclusion":
+        return { name: "Final Verdict", color: "bg-gray-900", avatar: "⚖️" }
+      default:
+        return { name: "Unknown", color: "bg-gray-500", avatar: "❓" }
+    }
+  }
+
+  // No agents available state
+  if (availableLeaders.length === 0) {
+    return (
+      <div className="min-h-screen px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="animate-fade-in">
+            <div className="dateline">{currentDate} — Agent Creation Bureau</div>
+
+            <div className="text-center mb-8">
+              <h1 className="text-4xl md:text-5xl newspaper-headline mb-4">NO AGENTS PRESENT</h1>
+              <p className="newspaper-subhead text-xl italic">Create Your First Artificial Intelligence Agent</p>
+            </div>
+
+            <div className="newspaper-article text-center py-16">
+              <div className="newspaper-card-content">
+                <UserPlus className="h-20 w-20 text-gray-400 mx-auto mb-6" />
+                <h3 className="newspaper-headline text-2xl mb-4">AGENT FACTORY AWAITS</h3>
+                <p className="newspaper-body text-lg mb-8">
+                  No artificial intelligence agents are currently available for debate. Create your first agent to begin
+                  intellectual discourse.
+                </p>
+
+                <div className="max-w-md mx-auto mb-8">
+                  <label className="block newspaper-subhead mb-3">Agent Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Winston Churchill, Marie Curie, etc."
+                    value={newAgentName}
+                    onChange={(e) => setNewAgentName(e.target.value)}
+                    disabled={creatingAgent}
+                    className="w-full p-4 border-2 border-gray-400 newspaper-body focus:border-gray-600 transition-all duration-300 bg-white mb-4"
+                  />
+
+                  <button
+                    onClick={handleCreateAgent}
+                    disabled={creatingAgent || !newAgentName.trim()}
+                    className="w-full newspaper-btn-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                  >
+                    {creatingAgent ? (
+                      <div className="flex items-center justify-center space-x-2">
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <span>Manufacturing Agent...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center space-x-2">
+                        <UserPlus className="h-5 w-5" />
+                        <span>Create First Agent</span>
+                      </div>
+                    )}
+                  </button>
+                </div>
+
+                {createError && (
+                  <div className="newspaper-card bg-red-50 border-red-400 max-w-md mx-auto">
+                    <div className="newspaper-card-content">
+                      <p className="text-red-800 newspaper-body">{createError}</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="classified-sidebar inline-block mt-8">
+                  <h3 className="newspaper-subhead text-sm mb-3">AGENT SPECIFICATIONS</h3>
+                  <div className="space-y-2 text-xs newspaper-body">
+                    <p>
+                      <strong>PERSONALITY:</strong> AI-generated based on historical figures
+                    </p>
+                    <p>
+                      <strong>CAPABILITIES:</strong> Intelligent debate and discourse
+                    </p>
+                    <p>
+                      <strong>STORAGE:</strong> Saved locally for future use
+                    </p>
+                    <p>
+                      <strong>CUSTOMIZATION:</strong> Unique traits and perspectives
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="animate-fade-in">
-        {/* Dateline */}
-        <div className="dateline">{currentDate} — Debate Arena</div>
+    <div className="min-h-screen px-4 py-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="animate-fade-in">
+          {/* Dateline */}
+          <div className="dateline">{currentDate} — Intellectual Arena</div>
 
-        <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-5xl newspaper-headline mb-4">INTELLECTUAL DISCOURSE</h1>
-          <p className="newspaper-subhead text-xl italic">Where Great Minds Meet in Debate</p>
-        </div>
-
-        {/* Current Topic Banner */}
-        {currentTopic && (
-          <div className="newspaper-card mb-8 animate-slide-up">
-            <div className="newspaper-card-content">
-              <div className="flex items-start space-x-3">
-                <DocumentTextIcon className="h-6 w-6 text-gray-600 mt-1" />
-                <div>
-                  <h3 className="newspaper-subhead mb-2">Topic from Current Affairs</h3>
-                  <p className="newspaper-body">{currentTopic}</p>
-                </div>
-              </div>
-            </div>
+          <div className="text-center mb-8">
+            <h1 className="text-4xl md:text-5xl newspaper-headline mb-4 flex items-center justify-center gap-3">
+              <Users className="h-10 w-10" />
+              ARTIFICIAL INTELLIGENCE DEBATE ARENA
+            </h1>
+            <p className="newspaper-subhead text-xl italic">Witness Mechanical Minds Engage in Scholarly Discourse</p>
           </div>
-        )}
 
-        {!isDebating && !debateEnded && (
-          <div className="newspaper-article animate-scale-in">
+          {/* Agent Creation Section */}
+          <div className="newspaper-card mb-8">
             <div className="newspaper-card-content">
-              <h2 className="newspaper-headline text-2xl mb-8 text-center border-b-2 border-gray-400 pb-4">
-                ARRANGE YOUR DEBATE
-              </h2>
-
-              {/* Leader Selection */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                <div>
-                  <h3 className="newspaper-subhead mb-6 text-center border-b border-gray-400 pb-2">FIRST DEBATER</h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    {leaders.map((leader) => (
-                      <button
-                        key={leader.id}
-                        onClick={() => setLeader1(leader)}
-                        className={`p-4 border-2 transition-all duration-300 ${
-                          leader1.id === leader.id
-                            ? "border-gray-800 bg-gray-100"
-                            : "border-gray-400 hover:border-gray-600 bg-white"
-                        }`}
-                      >
-                        <Image
-                          src={leader.image || "/placeholder.svg"}
-                          alt={leader.name}
-                          width={50}
-                          height={50}
-                          className="rounded-full mx-auto mb-3 border-2 border-gray-400"
-                        />
-                        <p className="text-sm newspaper-subhead text-center">{leader.name}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="newspaper-subhead mb-6 text-center border-b border-gray-400 pb-2">SECOND DEBATER</h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    {leaders.map((leader) => (
-                      <button
-                        key={leader.id}
-                        onClick={() => setLeader2(leader)}
-                        className={`p-4 border-2 transition-all duration-300 ${
-                          leader2.id === leader.id
-                            ? "border-gray-800 bg-gray-100"
-                            : "border-gray-400 hover:border-gray-600 bg-white"
-                        }`}
-                      >
-                        <Image
-                          src={leader.image || "/placeholder.svg"}
-                          alt={leader.name}
-                          width={50}
-                          height={50}
-                          className="rounded-full mx-auto mb-3 border-2 border-gray-400"
-                        />
-                        <p className="text-sm newspaper-subhead text-center">{leader.name}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="newspaper-subhead text-lg">Available Agents: {availableLeaders.length}</h2>
+                <button
+                  onClick={() => setShowCreateAgent(!showCreateAgent)}
+                  className="newspaper-btn-secondary text-sm py-2 px-4 flex items-center space-x-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Create New Agent</span>
+                </button>
               </div>
 
-              <div className="newspaper-divider"></div>
-
-              {/* Topic Input */}
-              <div className="mb-8">
-                <label className="block newspaper-subhead mb-3">Debate Topic</label>
-                <input
-                  type="text"
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                  placeholder="e.g., How should we address climate change?"
-                  className="w-full p-4 border-2 border-gray-400 newspaper-body focus:border-gray-600 transition-all duration-300 bg-white"
-                />
-              </div>
-
-              <button
-                onClick={startDebate}
-                disabled={!topic.trim() || leader1.id === leader2.id}
-                className="w-full newspaper-btn-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-              >
-                <div className="flex items-center justify-center space-x-2">
-                  <PlayIcon className="h-5 w-5" />
-                  <span>Commence Debate</span>
-                </div>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Debate Interface */}
-        {(isDebating || debateEnded) && (
-          <div>
-            {/* Debate Header */}
-            <div className="newspaper-card mb-6">
-              <div className="newspaper-card-content">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="newspaper-subhead text-xl">Debate Topic: {topic}</h2>
-                  {isDebating && (
-                    <button onClick={endDebate} className="newspaper-btn-secondary text-sm py-2 px-4">
-                      End Debate
+              {showCreateAgent && (
+                <div className="border-t-2 border-gray-400 pt-4">
+                  <h3 className="newspaper-subhead mb-3">Agent Manufacturing</h3>
+                  <div className="flex gap-4">
+                    <input
+                      type="text"
+                      placeholder="Enter agent name (e.g., Napoleon Bonaparte)"
+                      value={newAgentName}
+                      onChange={(e) => setNewAgentName(e.target.value)}
+                      disabled={creatingAgent}
+                      className="flex-1 p-3 border-2 border-gray-400 newspaper-body focus:border-gray-600 transition-all duration-300 bg-white"
+                    />
+                    <button
+                      onClick={handleCreateAgent}
+                      disabled={creatingAgent || !newAgentName.trim()}
+                      className="newspaper-btn-primary text-sm py-3 px-6 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                    >
+                      {creatingAgent ? (
+                        <div className="flex items-center space-x-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Creating...</span>
+                        </div>
+                      ) : (
+                        "Create Agent"
+                      )}
                     </button>
+                  </div>
+
+                  {createError && (
+                    <div className="mt-3 p-3 bg-red-50 border-2 border-red-400">
+                      <p className="text-red-800 newspaper-body text-sm">{createError}</p>
+                    </div>
                   )}
                 </div>
+              )}
+            </div>
+          </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <Image
-                      src={leader1.image || "/placeholder.svg"}
-                      alt={leader1.name}
-                      width={60}
-                      height={60}
-                      className="rounded-full border-2 border-gray-400"
-                    />
-                    <div>
-                      <h3 className="newspaper-subhead">{leader1.name}</h3>
-                      <p className="newspaper-caption">{leader1.specialty}</p>
+          {/* Leader Selection */}
+          {debateState.phase === "setup" && (
+            <div className="newspaper-article mb-8 animate-scale-in">
+              <div className="newspaper-card-content">
+                <h2 className="newspaper-headline text-2xl mb-8 text-center border-b-2 border-gray-400 pb-4">
+                  SELECT YOUR DEBATING MACHINES
+                </h2>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                  <div>
+                    <h3 className="newspaper-subhead mb-6 text-center border-b border-gray-400 pb-2">
+                      FIRST ARTIFICIAL MIND
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      {availableLeaders.map((leader) => (
+                        <button
+                          key={leader.id}
+                          onClick={() => setLeader1(leader)}
+                          className={`p-4 border-2 transition-all duration-300 ${
+                            leader1?.id === leader.id
+                              ? "border-gray-800 bg-gray-100"
+                              : "border-gray-400 hover:border-gray-600 bg-white"
+                          }`}
+                        >
+                          <Image
+                            src={leader.image || "/placeholder.svg"}
+                            alt={leader.name}
+                            width={50}
+                            height={50}
+                            className="rounded-full mx-auto mb-3 border-2 border-gray-400"
+                          />
+                          <p className="text-sm newspaper-subhead text-center">{leader.name}</p>
+                          <p className="text-xs newspaper-caption text-center mt-1">
+                            {leader.specialty || "AI Persona"}
+                          </p>
+                        </button>
+                      ))}
                     </div>
                   </div>
 
-                  <div className="text-center">
-                    <span className="text-2xl">⚔️</span>
-                    <p className="newspaper-caption">VERSUS</p>
-                  </div>
-
-                  <div className="flex items-center space-x-4">
-                    <div className="text-right">
-                      <h3 className="newspaper-subhead">{leader2.name}</h3>
-                      <p className="newspaper-caption">{leader2.specialty}</p>
+                  <div>
+                    <h3 className="newspaper-subhead mb-6 text-center border-b border-gray-400 pb-2">
+                      SECOND ARTIFICIAL MIND
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      {availableLeaders.map((leader) => (
+                        <button
+                          key={leader.id}
+                          onClick={() => setLeader2(leader)}
+                          className={`p-4 border-2 transition-all duration-300 ${
+                            leader2?.id === leader.id
+                              ? "border-gray-800 bg-gray-100"
+                              : "border-gray-400 hover:border-gray-600 bg-white"
+                          }`}
+                        >
+                          <Image
+                            src={leader.image || "/placeholder.svg"}
+                            alt={leader.name}
+                            width={50}
+                            height={50}
+                            className="rounded-full mx-auto mb-3 border-2 border-gray-400"
+                          />
+                          <p className="text-sm newspaper-subhead text-center">{leader.name}</p>
+                          <p className="text-xs newspaper-caption text-center mt-1">
+                            {leader.specialty || "AI Persona"}
+                          </p>
+                        </button>
+                      ))}
                     </div>
-                    <Image
-                      src={leader2.image || "/placeholder.svg"}
-                      alt={leader2.name}
-                      width={60}
-                      height={60}
-                      className="rounded-full border-2 border-gray-400"
-                    />
                   </div>
                 </div>
+
+                <div className="newspaper-divider"></div>
+
+                {/* Topic Input */}
+                <div className="mb-8">
+                  <label className="block newspaper-subhead mb-3">Debate Topic for Artificial Minds</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Should artificial intelligence replace human teachers?"
+                    value={debateState.topic}
+                    onChange={(e) => setDebateState((prev) => ({ ...prev, topic: e.target.value }))}
+                    disabled={debateState.isDebating}
+                    className="w-full p-4 border-2 border-gray-400 newspaper-body focus:border-gray-600 transition-all duration-300 bg-white"
+                  />
+                </div>
+
+                <button
+                  onClick={startDebate}
+                  disabled={
+                    debateState.isDebating ||
+                    !debateState.topic.trim() ||
+                    !leader1 ||
+                    !leader2 ||
+                    leader1.id === leader2.id
+                  }
+                  className="w-full newspaper-btn-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                >
+                  {debateState.isDebating ? (
+                    <div className="flex items-center justify-center space-x-2">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span>Artificial Minds Debating...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center space-x-2">
+                      <Play className="h-5 w-5" />
+                      <span>Activate Debate Machines</span>
+                    </div>
+                  )}
+                </button>
               </div>
             </div>
+          )}
 
-            {/* Debate Transcript */}
-            <div className="newspaper-article mb-6">
-              <div className="newspaper-card-content">
-                <h3 className="newspaper-subhead mb-4 border-b border-gray-400 pb-2">Official Transcript</h3>
-                <div className="space-y-4 max-h-96 overflow-y-auto">
-                  {debateMessages.map((message, index) => (
-                    <div
-                      key={index}
-                      className={`flex ${message.speaker === leader1.name ? "justify-start" : "justify-end"}`}
-                    >
-                      <div
-                        className={`max-w-xs lg:max-w-md px-4 py-3 border-2 ${
-                          message.speaker === leader1.name ? "border-gray-600 bg-gray-100" : "border-gray-400 bg-white"
-                        }`}
-                      >
-                        <p className="newspaper-subhead text-sm mb-1">{message.speaker}</p>
-                        <p className="newspaper-body text-sm">{message.message}</p>
+          {/* Active Debate Interface */}
+          {(debateState.phase === "debating" || debateState.phase === "concluded") && leader1 && leader2 && (
+            <div className="space-y-6">
+              {/* Debate Header */}
+              <div className="newspaper-card">
+                <div className="newspaper-card-content">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+                    <div>
+                      <h2 className="newspaper-subhead text-xl mb-2">Current Debate Topic:</h2>
+                      <p className="newspaper-body">{debateState.topic}</p>
+                    </div>
+                    <div className="flex items-center gap-3 mt-4 sm:mt-0">
+                      <span className="news-tag">Round {Math.ceil(debateState.currentRound / 2)}/10</span>
+                      {debateState.phase === "concluded" && (
+                        <button onClick={resetDebate} className="newspaper-btn-secondary text-sm py-2 px-4">
+                          New Debate
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Debater Info */}
+                  <div className="flex items-center justify-between border-t-2 border-gray-400 pt-4">
+                    <div className="flex items-center space-x-4">
+                      <Image
+                        src={leader1.image || "/placeholder.svg"}
+                        alt={leader1.name}
+                        width={50}
+                        height={50}
+                        className="rounded-full border-2 border-gray-400"
+                      />
+                      <div>
+                        <h3 className="newspaper-subhead">{leader1.name}</h3>
+                        <p className="newspaper-caption">AI Persona #1</p>
                       </div>
                     </div>
-                  ))}
 
-                  {isDebating && (
-                    <div className="flex justify-center">
-                      <div className="animate-pulse newspaper-caption">Debate in progress...</div>
+                    <div className="text-center">
+                      <span className="text-2xl">⚔️</span>
+                      <p className="newspaper-caption">VERSUS</p>
                     </div>
-                  )}
+
+                    <div className="flex items-center space-x-4">
+                      <div className="text-right">
+                        <h3 className="newspaper-subhead">{leader2.name}</h3>
+                        <p className="newspaper-caption">AI Persona #2</p>
+                      </div>
+                      <Image
+                        src={leader2.image || "/placeholder.svg"}
+                        alt={leader2.name}
+                        width={50}
+                        height={50}
+                        className="rounded-full border-2 border-gray-400"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Debate Transcript */}
+              <div className="newspaper-article">
+                <div className="newspaper-card-content">
+                  <h3 className="newspaper-subhead mb-6 border-b-2 border-gray-400 pb-3 text-center">
+                    OFFICIAL DEBATE TRANSCRIPT
+                  </h3>
+
+                  <div className="space-y-4 max-h-[600px] overflow-y-auto">
+                    {debateState.messages.map((message) => {
+                      const speakerInfo = getSpeakerInfo(message.speaker)
+                      return (
+                        <div key={message.id} className="newspaper-card">
+                          <div className="newspaper-card-content">
+                            <div className="flex items-start gap-4">
+                              {speakerInfo.img ? (
+                                <Image
+                                  src={speakerInfo.img || "/placeholder.svg"}
+                                  alt={speakerInfo.name}
+                                  width={40}
+                                  height={40}
+                                  className="rounded-full border-2 border-gray-400 flex-shrink-0"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 bg-gray-800 text-white rounded-full flex items-center justify-center text-lg flex-shrink-0">
+                                  {speakerInfo.avatar}
+                                </div>
+                              )}
+
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-3 border-b border-gray-300 pb-2">
+                                  <h4 className="newspaper-subhead">{speakerInfo.name}</h4>
+                                  <span className="newspaper-caption text-xs">
+                                    {message.timestamp.toLocaleTimeString()}
+                                  </span>
+                                  {message.speaker === "conclusion" && (
+                                    <span className="news-tag text-xs">FINAL VERDICT</span>
+                                  )}
+                                </div>
+                                <p className="newspaper-body leading-relaxed">
+                                  {message.speaker === "conclusion" && (
+                                    <span className="drop-cap">{message.content}</span>
+                                  )}
+                                  {message.speaker !== "conclusion" && message.content}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+
+                    {debateState.isDebating && (
+                      <div className="newspaper-card border-dashed border-gray-400">
+                        <div className="newspaper-card-content">
+                          <div className="flex items-center gap-4">
+                            <Loader2 className="h-8 w-8 animate-spin text-gray-600" />
+                            <div>
+                              <p className="newspaper-subhead">Artificial Intelligence Processing...</p>
+                              <p className="newspaper-caption">Mechanical minds formulating arguments</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
+          )}
 
-            {/* Post-Debate Actions */}
-            {debateEnded && (
-              <div className="newspaper-card text-center">
-                <div className="newspaper-card-content">
-                  <h3 className="newspaper-headline text-xl mb-4">DEBATE CONCLUDED!</h3>
-                  <p className="newspaper-body mb-6">
-                    This historic discussion between {leader1.name} and {leader2.name} about {topic.toLowerCase()} is
-                    now ready to be preserved for posterity.
-                  </p>
-                  <Link
-                    href={`/mint?type=debate&leader1=${leader1.id}&leader2=${leader2.id}&topic=${encodeURIComponent(topic)}`}
-                    className="newspaper-btn-primary"
-                  >
-                    Preserve Historical Record
-                  </Link>
+          {/* Empty State */}
+          {debateState.messages.length === 0 && debateState.phase === "setup" && availableLeaders.length > 0 && (
+            <div className="newspaper-article text-center py-16">
+              <div className="newspaper-card-content">
+                <Users className="h-20 w-20 text-gray-400 mx-auto mb-6" />
+                <h3 className="newspaper-headline text-2xl mb-4">DEBATE ARENA AWAITS</h3>
+                <p className="newspaper-body text-lg mb-6">
+                  Configure your artificial debaters above and witness mechanical minds engage in scholarly discourse
+                </p>
+
+                <div className="classified-sidebar inline-block">
+                  <h3 className="newspaper-subhead text-sm mb-3">ARENA SPECIFICATIONS</h3>
+                  <div className="space-y-2 text-xs newspaper-body">
+                    <p>
+                      <strong>PARTICIPANTS:</strong> Two AI personas
+                    </p>
+                    <p>
+                      <strong>FORMAT:</strong> Structured intellectual debate
+                    </p>
+                    <p>
+                      <strong>DURATION:</strong> 10 rounds maximum
+                    </p>
+                    <p>
+                      <strong>CONCLUSION:</strong> Automated verdict
+                    </p>
+                  </div>
                 </div>
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
