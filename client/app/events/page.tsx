@@ -13,7 +13,7 @@ import {
 } from "@heroicons/react/24/outline"
 import { LeaderSelectionModal } from "@/components/LeaderSelectionModal"
 import { DebateSetupModal } from "@/components/DebateSetupModal"
-
+import Link from "next/link"
 interface NewsItem {
   id: number
   headline: string
@@ -106,12 +106,13 @@ export default function EventsPage() {
 
   const handleAskLeader = (topic: string) => {
     setSelectedTopic(topic)
-    setShowLeaderModal(true)
+    // setShowLeaderModal(true)
+    // setShowDebateModal(true)
   }
 
   const handleStartDebate = (topic: string) => {
     setSelectedTopic(topic)
-    setShowDebateModal(true)
+    
   }
 
   return (
@@ -210,13 +211,14 @@ export default function EventsPage() {
                   </div>
 
                   <div className="flex space-x-2">
-                    <button
-                      onClick={() => handleAskLeader(item.headline)}
+                    <Link 
+                      // onClick={() => handleAskLeader(item.headline)}
+                      href={`/consult?topic=${encodeURIComponent(item.headline)}`}
                       className="flex-1 newspaper-btn-primary text-xs py-2 flex items-center justify-center space-x-2"
                     >
                       <ChatBubbleLeftRightIcon className="h-4 w-4" />
                       <span>Consult Leader</span>
-                    </button>
+                    </Link>
                     <button
                       onClick={() => handleStartDebate(item.headline)}
                       className="flex-1 newspaper-btn-secondary text-xs py-2 flex items-center justify-center space-x-2"
