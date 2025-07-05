@@ -1,0 +1,425 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Newspaper texture and background */
+:root {
+  --newspaper-bg: #f4f1e8;
+  --newspaper-aged: #e8e0d0;
+  --newspaper-ink: #2c2c2c;
+  --newspaper-faded: #5a5a5a;
+  --newspaper-border: #8b7355;
+  --sepia-overlay: rgba(139, 115, 85, 0.1);
+
+  /* Font variables will be injected by Next.js */
+}
+
+/* Paper texture background */
+body {
+  background-color: var(--newspaper-bg);
+  background-image: radial-gradient(circle at 20% 50%, rgba(139, 115, 85, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(101, 67, 33, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 40% 80%, rgba(139, 115, 85, 0.04) 0%, transparent 50%),
+    linear-gradient(90deg, transparent 0%, rgba(139, 115, 85, 0.02) 50%, transparent 100%);
+  position: relative;
+}
+
+/* Subtle paper grain texture */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(139, 115, 85, 0.01) 2px,
+      rgba(139, 115, 85, 0.01) 4px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(139, 115, 85, 0.01) 2px,
+      rgba(139, 115, 85, 0.01) 4px
+    );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Typography */
+.newspaper-headline {
+  font-family: var(--font-playfair), serif;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--newspaper-ink);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.newspaper-subhead {
+  font-family: var(--font-playfair), serif;
+  font-weight: 700;
+  color: var(--newspaper-ink);
+}
+
+.newspaper-body {
+  font-family: var(--font-crimson), serif;
+  color: var(--newspaper-ink);
+  line-height: 1.6;
+}
+
+.newspaper-caption {
+  font-family: var(--font-old-standard), serif;
+  font-style: italic;
+  color: var(--newspaper-faded);
+  font-size: 0.9em;
+}
+
+/* Dateline styling */
+.dateline {
+  font-family: var(--font-old-standard), serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--newspaper-faded);
+  border-bottom: 2px solid var(--newspaper-border);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.dateline::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--newspaper-faded);
+}
+
+/* Drop cap styling */
+.drop-cap::first-letter {
+  font-family: var(--font-playfair), serif;
+  font-size: 4em;
+  font-weight: 900;
+  line-height: 0.8;
+  float: left;
+  margin: 0.1em 0.1em 0 0;
+  color: var(--newspaper-ink);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes subtleFlicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.98;
+  }
+}
+
+/* Animation utilities */
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.6s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.4s ease-out;
+}
+
+.animate-flicker {
+  animation: subtleFlicker 4s ease-in-out infinite;
+}
+
+/* Component styles */
+@layer components {
+  .newspaper-card {
+    background: linear-gradient(135deg, var(--newspaper-bg) 0%, var(--newspaper-aged) 100%);
+    border: 2px solid var(--newspaper-border);
+    border-radius: 0;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 4px 8px rgba(139, 115, 85, 0.2), 0 0 0 1px
+      rgba(139, 115, 85, 0.1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .newspaper-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--sepia-overlay);
+    pointer-events: none;
+  }
+
+  .newspaper-card-content {
+    position: relative;
+    z-index: 2;
+    padding: 1.5rem;
+  }
+
+  .newspaper-btn-primary {
+    background: linear-gradient(135deg, var(--newspaper-ink) 0%, var(--newspaper-faded) 100%);
+    color: var(--newspaper-bg);
+    border: 2px solid var(--newspaper-ink);
+    font-family: var(--font-playfair), serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.75rem 2rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .newspaper-btn-primary:hover {
+    background: var(--newspaper-bg);
+    color: var(--newspaper-ink);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(139, 115, 85, 0.3);
+  }
+
+  .newspaper-btn-secondary {
+    background: var(--newspaper-bg);
+    color: var(--newspaper-ink);
+    border: 2px solid var(--newspaper-border);
+    font-family: var(--font-playfair), serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.75rem 2rem;
+    transition: all 0.3s ease;
+  }
+
+  .newspaper-btn-secondary:hover {
+    background: var(--newspaper-aged);
+    border-color: var(--newspaper-ink);
+    transform: translateY(-2px);
+  }
+
+  .newspaper-nav {
+    background: linear-gradient(135deg, var(--newspaper-bg) 0%, var(--newspaper-aged) 100%);
+    border-bottom: 3px double var(--newspaper-border);
+    box-shadow: 0 2px 8px rgba(139, 115, 85, 0.2);
+    position: relative;
+  }
+
+  .newspaper-nav::after {
+    content: "";
+    position: absolute;
+    bottom: -6px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--newspaper-faded);
+  }
+
+  .newspaper-article {
+    background: var(--newspaper-bg);
+    border: 1px solid var(--newspaper-border);
+    border-radius: 0;
+    box-shadow: 0 2px 4px rgba(139, 115, 85, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .newspaper-article::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 10% 20%, rgba(139, 115, 85, 0.03) 0%, transparent 50%),
+      radial-gradient(circle at 90% 80%, rgba(101, 67, 33, 0.02) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  .newspaper-divider {
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--newspaper-border) 20%,
+      var(--newspaper-border) 80%,
+      transparent 100%
+    );
+    margin: 2rem 0;
+    position: relative;
+  }
+
+  .newspaper-divider::after {
+    content: "❦";
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--newspaper-bg);
+    padding: 0 1rem;
+    color: var(--newspaper-border);
+    font-size: 1rem;
+  }
+
+  .classified-sidebar {
+    background: var(--newspaper-aged);
+    border: 2px dashed var(--newspaper-border);
+    padding: 1rem;
+    font-family: var(--font-old-standard), serif;
+    font-size: 0.85em;
+    line-height: 1.4;
+  }
+
+  .masthead {
+    font-family: var(--font-playfair), serif;
+    font-weight: 900;
+    text-align: center;
+    border-top: 3px solid var(--newspaper-ink);
+    border-bottom: 3px solid var(--newspaper-ink);
+    padding: 1rem 0;
+    margin: 1rem 0;
+    background: linear-gradient(135deg, var(--newspaper-bg) 0%, var(--newspaper-aged) 100%);
+    position: relative;
+  }
+
+  .masthead::before,
+  .masthead::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 50px;
+    height: 2px;
+    background: var(--newspaper-border);
+  }
+
+  .masthead::before {
+    left: 2rem;
+  }
+
+  .masthead::after {
+    right: 2rem;
+  }
+
+  .column-divider {
+    width: 1px;
+    background: var(--newspaper-border);
+    margin: 0 1rem;
+    opacity: 0.6;
+  }
+
+  .news-tag {
+    background: var(--newspaper-ink);
+    color: var(--newspaper-bg);
+    font-family: var(--font-old-standard), serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.7em;
+    letter-spacing: 0.1em;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0;
+  }
+
+  .watermark {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-45deg);
+    font-family: var(--font-playfair), serif;
+    font-size: 8rem;
+    font-weight: 900;
+    color: rgba(139, 115, 85, 0.03);
+    pointer-events: none;
+    z-index: 0;
+    user-select: none;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--newspaper-aged);
+  border: 1px solid var(--newspaper-border);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--newspaper-border);
+  border-radius: 0;
+  border: 1px solid var(--newspaper-faded);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--newspaper-faded);
+}
+
+/* Base styles */
+@layer base {
+  * {
+    position: relative;
+    z-index: 2;
+  }
+
+  body {
+    font-family: var(--font-crimson), serif;
+    color: var(--newspaper-ink);
+    line-height: 1.6;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-playfair), serif;
+    font-weight: 700;
+    color: var(--newspaper-ink);
+  }
+}
