@@ -2,8 +2,10 @@ import type React from "react"
 import type { Metadata } from "next"
 import "./globals.css"
 import { WalletProvider } from "@/components/WalletProvider"
+import { AutoConnectProvider } from "@/components/AutoConnectProvider"
 import {ReactQueryClientProvider} from "@/components/ReactQueryClientProvider"
 import Navigation from "@/components/Navigation"
+import { Toaster } from "@/components/ui/toaster"
 import { Playfair_Display, Crimson_Text, Old_Standard_TT } from "next/font/google"
 
 // Define fonts with Next.js font system
@@ -45,10 +47,13 @@ export default function RootLayout({
         <div className="watermark">LEADERS' GAZETTE</div>
         <div className="min-h-screen">
           <ReactQueryClientProvider>
-            <WalletProvider>
-              <Navigation />
-              <main>{children}</main>
-            </WalletProvider>
+            <AutoConnectProvider>
+              <WalletProvider>
+                <Navigation />
+                <main>{children}</main>
+                <Toaster />
+              </WalletProvider>
+            </AutoConnectProvider>
           </ReactQueryClientProvider>
         </div>
       </body>
