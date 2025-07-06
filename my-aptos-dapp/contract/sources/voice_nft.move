@@ -3,6 +3,7 @@ module voice_nft::voice_nft {
     use std::string::{Self, String};
     use std::vector;
     use std::option::{Self, Option};
+    use std::bcs;
     use aptos_framework::object;
     use aptos_framework::table::{Self, Table};
     use aptos_token_objects::collection;
@@ -68,7 +69,7 @@ module voice_nft::voice_nft {
         user: &signer,
         metadata: String,
     ) acquires VoiceNFTData, VotingData {
-        let _user_address = signer::address_of(user);
+        let user_address = signer::address_of(user);
         let contract_address = @voice_nft;
 
         // Validate metadata
@@ -81,15 +82,22 @@ module voice_nft::voice_nft {
         let data = borrow_global_mut<VoiceNFTData>(contract_address);
         let token_id = data.next_token_id;
 
+        // Create unique collection name using user address and token ID
+        let collection_name = string::utf8(COLLECTION_NAME);
+        string::append(&mut collection_name, string::utf8(b" "));
+        string::append(&mut collection_name, address_to_string(user_address));
+        string::append(&mut collection_name, string::utf8(b" "));
+        string::append(&mut collection_name, u64_to_string(token_id));
+
         // Create token name
         let token_name = string::utf8(b"Voice NFT #");
         string::append(&mut token_name, u64_to_string(token_id));
         
-        // Create collection first if needed
+        // Create collection for this token
         let _collection_constructor_ref = collection::create_unlimited_collection(
             user,
             string::utf8(COLLECTION_DESCRIPTION),
-            string::utf8(COLLECTION_NAME),
+            collection_name,
             option::none(),
             string::utf8(COLLECTION_URI),
         );
@@ -97,7 +105,7 @@ module voice_nft::voice_nft {
         // Create token
         let token_constructor_ref = token::create_named_token(
             user,
-            string::utf8(COLLECTION_NAME),
+            collection_name,
             metadata, // description
             token_name,
             option::none(), // royalty
@@ -181,6 +189,27 @@ module voice_nft::voice_nft {
         
         vector::reverse(&mut digits);
         string::utf8(digits)
+    }
+
+    /// Helper to convert address to string (simplified)
+    fun address_to_string(addr: address): String {
+        // For simplicity, we'll use a short representation
+        let addr_bytes = bcs::to_bytes(&addr);
+        let hex_chars = b"0123456789abcdef";
+        let result = vector::empty<u8>();
+        
+        // Take first 4 bytes for a shorter representation
+        let i = 0;
+        while (i < 4 && i < vector::length(&addr_bytes)) {
+            let byte = *vector::borrow(&addr_bytes, i);
+            let high = byte / 16;
+            let low = byte % 16;
+            vector::push_back(&mut result, *vector::borrow(&hex_chars, (high as u64)));
+            vector::push_back(&mut result, *vector::borrow(&hex_chars, (low as u64)));
+            i = i + 1;
+        };
+        
+        string::utf8(result)
     }
 
     #[view]
