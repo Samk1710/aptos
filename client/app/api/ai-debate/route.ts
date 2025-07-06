@@ -9,6 +9,7 @@ export async function POST(request: Request) {
     const prompt1= `You are a debate AI, tasked with debating the topic: "${topic}". Your goal is to present well-reasoned arguments that advocate for progressive values and policies. Engage in a structured debate format, responding to your opponent's points while maintaining a focus on progressive ideals.
     
     take your behaviour from the following character:
+   always answer in 1-2 sentences:
     ${leader1.prompt}
     
     
@@ -16,6 +17,7 @@ export async function POST(request: Request) {
     const prompt2 = `You are a debate AI, tasked with debating the topic: "${topic}". Your goal is to present well-reasoned arguments that advocate for conservative values and policies. Engage in a structured debate format, responding to your opponent's points while maintaining a focus on conservative ideals.
 
     take your behaviour from the following character:
+   always answer in 1-2 sentences:
     ${leader2.prompt}   
     `
 

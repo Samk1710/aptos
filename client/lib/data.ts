@@ -85,6 +85,7 @@ export const mockNFTs = [
     leaders: ["Gandhi", "Churchill"],
     mintDate: "2024-01-15",
     transcript: "A fascinating discussion on the moral implications of artificial intelligence...",
+    img:"/https___corcel.b-cdn.net_0f248d92-f209-42eb-96c4-52738cd6ca19.webp"
   },
   {
     id: 2,
@@ -92,7 +93,9 @@ export const mockNFTs = [
     leaders: ["Mandela", "Roosevelt"],
     mintDate: "2024-01-10",
     transcript: "An inspiring conversation about environmental leadership...",
+    img:"/https___corcel.b-cdn.net_d422e099-c575-4bc6-9b8e-aaa134d7c9b6.webp"
   },
+  
 ]
 
 export const leaderboardData = [

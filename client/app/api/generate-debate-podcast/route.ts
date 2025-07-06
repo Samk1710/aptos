@@ -84,9 +84,22 @@ Instructions:
       config: {
         responseModalities: ["AUDIO"],
         speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: "Kore" }, // Using a professional voice
-          },
+          multiSpeakerVoiceConfig:{
+            speakerVoiceConfigs: [
+              {
+                speaker: leader1Voice,
+                voiceConfig: {
+                        prebuiltVoiceConfig: {voiceName: "Orus"},
+                     }
+              },
+              {
+                speaker: leader2Voice,
+                voiceConfig: {
+                        prebuiltVoiceConfig: {voiceName: "Algieba"},
+                    }
+              },
+            ],
+          }
         },
       },
     })

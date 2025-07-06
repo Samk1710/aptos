@@ -298,6 +298,7 @@ export default function DebateSystem() {
         json: jsonResult.ipfsHash,
         audio: audioResult.ipfsHash,
       })
+      console.log("Saved links:", savedLinks)
       setSaveSuccess(true)
     } catch (error: any) {
       console.error("Error saving debate:", error)

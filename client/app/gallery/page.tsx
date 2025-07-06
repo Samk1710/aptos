@@ -80,6 +80,7 @@ export default function GalleryPage() {
                           className="w-8 h-8 bg-white/20 border border-white/40 flex items-center justify-center text-xs font-bold"
                         >
                           {leader[0]}
+                          <img src={leader.img} alt="" />
                         </div>
                       ))}
                     </div>
