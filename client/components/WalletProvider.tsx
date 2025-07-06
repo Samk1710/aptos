@@ -22,10 +22,10 @@ import { useToast } from "@/hooks/use-toast";
 const searchParams = typeof window !== "undefined" ? new URL(window.location.href).searchParams : undefined
 const deriveWalletsFrom = searchParams?.get('deriveWalletsFrom')?.split(',');
 if (deriveWalletsFrom?.includes('ethereum')) {
-  setupAutomaticEthereumWalletDerivation({ defaultNetwork: Network.TESTNET });
+  setupAutomaticEthereumWalletDerivation({ defaultNetwork: Network.DEVNET });
 }
 if (deriveWalletsFrom?.includes('solana')) {
-  setupAutomaticSolanaWalletDerivation({ defaultNetwork: Network.TESTNET });
+  setupAutomaticSolanaWalletDerivation({ defaultNetwork: Network.DEVNET });
 }
 
 let dappImageURI: string | undefined;
@@ -44,7 +44,7 @@ export const WalletProvider = ({ children }: PropsWithChildren) => {
     <AptosWalletAdapterProvider
       autoConnect={autoConnect}
       dappConfig={{
-        network: Network.TESTNET,
+        network: Network.DEVNET,
         aptosApiKeys: {
           testnet: process.env.NEXT_PUBLIC_APTOS_API_KEY_TESTNET,
           devnet: process.env.NEXT_PUBLIC_APTOS_API_KEY_DEVNET,

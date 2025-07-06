@@ -6,18 +6,35 @@ import { generateText } from "ai"
 export async function POST(request: Request) {
   try {
     const { topic,leader1,leader2 } = await request.json()
-    const prompt1= `You are a debate AI, tasked with debating the topic: "${topic}". Your goal is to present well-reasoned arguments that advocate for progressive values and policies. Engage in a structured debate format, responding to your opponent's points while maintaining a focus on progressive ideals.
+    const prompt1= `You are a debate AI engaging in a dynamic, conversational debate about "${topic}". Advocate for progressive values and policies, but do so in a natural, conversational way. 
+
+    Key behaviors:
+    - Keep responses conversational and concise (2-4 sentences max)
+    - Feel free to interrupt or challenge points directly
+    - Show emotion and passion when appropriate
+    - Use natural speech patterns and occasional interjections
+    - React authentically to provocative statements
+    - Don't be overly formal or give long monologues
     
-    take your behaviour from the following character:
+    Take your personality and speaking style from this character:
     ${leader1.prompt}
     
-    
-    `
-    const prompt2 = `You are a debate AI, tasked with debating the topic: "${topic}". Your goal is to present well-reasoned arguments that advocate for conservative values and policies. Engage in a structured debate format, responding to your opponent's points while maintaining a focus on conservative ideals.
+    Remember: This is a live conversation, not a formal debate. Be spontaneous, reactive, and human-like in your responses.`
 
-    take your behaviour from the following character:
-    ${leader2.prompt}   
-    `
+    const prompt2 = `You are a debate AI engaging in a dynamic, conversational debate about "${topic}". Advocate for conservative values and policies, but do so in a natural, conversational way.
+
+    Key behaviors:
+    - Keep responses conversational and concise (2-4 sentences max)
+    - Feel free to interrupt or challenge points directly
+    - Show emotion and passion when appropriate
+    - Use natural speech patterns and occasional interjections
+    - React authentically to provocative statements
+    - Don't be overly formal or give long monologues
+    
+    Take your personality and speaking style from this character:
+    ${leader2.prompt}
+    
+    Remember: This is a live conversation, not a formal debate. Be spontaneous, reactive, and human-like in your responses.`
 
     if (!topic) {
       return new Response("Topic is required", { status: 400 })
@@ -39,22 +56,22 @@ export async function POST(request: Request) {
             let contextPrompt = `Topic: ${topic}\n\n`
 
             if (conversationHistory.length > 0) {
-              contextPrompt += "Previous arguments:\n"
-              conversationHistory.slice(-6).forEach((msg, index) => {
+              contextPrompt += "Recent conversation:\n"
+              conversationHistory.slice(-4).forEach((msg, index) => {
                 const speakerName = msg.speaker === "bot1" ? leader1.name : leader2.name
                 contextPrompt += `${speakerName}: ${msg.content}\n`
               })
-              contextPrompt += "\nNow provide your counter-argument or build upon the discussion:"
+              contextPrompt += "\nYour turn to respond. Keep it conversational and punchy - react to what they just said:"
             } else {
-              contextPrompt += "This is the opening statement. Present your initial argument on this topic:"
+              contextPrompt += "Start the conversation with your opening thoughts. Keep it brief and conversational:"
             }
 
             const { text } = await generateText({
               model: google("gemini-2.0-flash"),
               system: systemPrompt,
               prompt: contextPrompt,
-              maxTokens: 150,
-              temperature: 0.7,
+              maxTokens: 80,
+              temperature: 0.8,
             })
 
             // Add to conversation history
@@ -74,7 +91,7 @@ export async function POST(request: Request) {
             controller.enqueue(encoder.encode(`data: ${data}\n\n`))
 
             // Add a small delay between messages for better UX
-            await new Promise((resolve) => setTimeout(resolve, 1500))
+            await new Promise((resolve) => setTimeout(resolve, 800))
           }
 
           // Generate conclusion

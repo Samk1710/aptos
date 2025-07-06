@@ -4,6 +4,14 @@ import { useState, useEffect } from "react"
 import { Loader2, Play, Users, Plus, UserPlus } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 import Image from "next/image"
+import { useWallet } from "@aptos-labs/wallet-adapter-react"
+import { toast } from "@/hooks/use-toast"
+import { WalletSelector } from "@/components/WalletSelector"
+import {
+  Aptos,
+  AptosConfig,
+  Network as AptosNetwork,
+} from "@aptos-labs/ts-sdk"
 
 interface Leader {
   name: string
@@ -29,6 +37,7 @@ interface DebateState {
 }
 
 export default function DebateSystem() {
+  const { account, connected, signAndSubmitTransaction } = useWallet()
   const searchParams = useSearchParams()
   const [availableLeaders, setAvailableLeaders] = useState<Leader[]>([])
   const [leader1, setLeader1] = useState<Leader | null>(null)
@@ -52,6 +61,16 @@ export default function DebateSystem() {
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [savedLinks, setSavedLinks] = useState<{ json?: string; audio?: string }>({})
 
+  // Add state for NFT minting
+  const [mintingNFT, setMintingNFT] = useState(false)
+  const [mintError, setMintError] = useState("")
+  const [mintSuccess, setMintSuccess] = useState(false)
+  const [aptosClient, setAptosClient] = useState<Aptos | null>(null)
+  
+  // Voice NFT contract information
+  const VOICE_NFT_MODULE_ADDRESS = process.env.NEXT_PUBLIC_VOICE_NFT_MODULE_ADDRESS || ""
+  const VOICE_NFT_MODULE_NAME = process.env.NEXT_PUBLIC_VOICE_NFT_MODULE_NAME || ""
+
   const currentDate = new Date().toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -71,6 +90,21 @@ export default function DebateSystem() {
       setLeader1(storedLeaders[0])
       setLeader2(storedLeaders[1] || storedLeaders[0])
     }
+  }, [])
+
+  // Initialize Aptos client
+  useEffect(() => {
+    const config = new AptosConfig({ network: AptosNetwork.DEVNET })
+    setAptosClient(new Aptos(config))
+    
+    // Debug logging
+    console.log("Initializing Aptos client...")
+    console.log("Module address:", VOICE_NFT_MODULE_ADDRESS)
+    console.log("Module name:", VOICE_NFT_MODULE_NAME)
+    console.log("Environment check:", {
+      moduleAddress: process.env.NEXT_PUBLIC_VOICE_NFT_MODULE_ADDRESS,
+      moduleName: process.env.NEXT_PUBLIC_VOICE_NFT_MODULE_NAME
+    })
   }, [])
 
   const handleCreateAgent = async () => {
@@ -216,6 +250,57 @@ export default function DebateSystem() {
     })
   }
 
+  // Add NFT minting function
+  const mintVoiceNFT = async (metadata: string) => {
+    if (!aptosClient || !account || !connected) {
+      toast({
+        title: "Wallet Not Connected",
+        description: "Please connect your wallet to mint the NFT",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setMintingNFT(true)
+    setMintError("")
+    setMintSuccess(false)
+
+    try {
+      const transaction: any = {
+        data: {
+          function: `${VOICE_NFT_MODULE_ADDRESS}::${VOICE_NFT_MODULE_NAME}::mint_voice_nft`,
+          functionArguments: [metadata],
+        },
+      }
+
+      console.log("Transaction payload:", transaction)
+      console.log("Module address:", VOICE_NFT_MODULE_ADDRESS)
+      console.log("Module name:", VOICE_NFT_MODULE_NAME)
+
+      const response = await signAndSubmitTransaction(transaction)
+      console.log("Transaction response:", response)
+      
+      await aptosClient.waitForTransaction({ transactionHash: response.hash })
+
+      toast({
+        title: "NFT Minted Successfully",
+        description: "Your podcast has been preserved as an NFT on the Aptos blockchain",
+      })
+      
+      setMintSuccess(true)
+    } catch (error: any) {
+      console.error("NFT Minting Error:", error)
+      setMintError(error.message || "Failed to mint NFT")
+      toast({
+        title: "NFT Minting Failed",
+        description: error.message || "Failed to mint NFT",
+        variant: "destructive",
+      })
+    } finally {
+      setMintingNFT(false)
+    }
+  }
+
   const saveDebateRecord = async () => {
     if (!leader1 || !leader2 || debateState.messages.length === 0) return
 
@@ -299,6 +384,16 @@ export default function DebateSystem() {
         audio: audioResult.ipfsHash,
       })
       setSaveSuccess(true)
+
+      // After saving is successful, mint the NFT
+      if (audioResult.ipfsHash) {
+        const audioUrl = `https://gateway.pinata.cloud/ipfs/${audioResult.ipfsHash}`
+        console.log("About to mint NFT with audio URL:", audioUrl)
+        console.log("Wallet connected:", connected)
+        console.log("Account:", account)
+        console.log("Aptos client:", aptosClient)
+        await mintVoiceNFT(audioUrl)
+      }
     } catch (error: any) {
       console.error("Error saving debate:", error)
       setSaveError(error.message || "Failed to save debate record")
@@ -418,6 +513,44 @@ export default function DebateSystem() {
               ARTIFICIAL INTELLIGENCE DEBATE ARENA
             </h1>
             <p className="newspaper-subhead text-xl italic">Witness Mechanical Minds Engage in Scholarly Discourse</p>
+          </div>
+
+          {/* Wallet Connection Section */}
+          <div className="newspaper-card mb-8">
+            <div className="newspaper-card-content">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="newspaper-subhead text-lg">Wallet Connection</h2>
+                <WalletSelector />
+              </div>
+              {connected && account && (
+                <div className="text-sm newspaper-body text-green-800 flex items-center gap-4">
+                  <span>Connected: {account.address?.toString().slice(0, 6)}...{account.address?.toString().slice(-4)}</span>
+                  <button
+                    onClick={() => {
+                      console.log("Testing wallet connection...");
+                      console.log("Account:", account);
+                      console.log("Connected:", connected);
+                      console.log("Aptos client:", aptosClient);
+                      console.log("Module address:", VOICE_NFT_MODULE_ADDRESS);
+                      console.log("Module name:", VOICE_NFT_MODULE_NAME);
+                      
+                      toast({
+                        title: "Test Wallet Connection",
+                        description: "Check console for wallet details",
+                      });
+                    }}
+                    className="newspaper-btn-secondary text-xs py-1 px-3"
+                  >
+                    Test Wallet
+                  </button>
+                </div>
+              )}
+              {!connected && (
+                <div className="text-sm newspaper-body text-orange-800">
+                  Connect your wallet to mint NFTs after debates
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Agent Creation Section */}
@@ -771,10 +904,10 @@ export default function DebateSystem() {
                   {savingDebate ? (
                     <div className="flex items-center justify-center space-x-2">
                       <Loader2 className="h-5 w-5 animate-spin" />
-                      <span>Preserving Historical Record...</span>
+                      <span>Preserving, Creating Podcast & Minting NFT...</span>
                     </div>
                   ) : (
-                    "Preserve & Create Podcast"
+                    "Preserve, Create Podcast & Mint NFT"
                   )}
                 </button>
 
@@ -843,6 +976,17 @@ export default function DebateSystem() {
                     </div>
                   </div>
                 </div>
+
+                {mintSuccess && (
+                  <div className="mt-4 newspaper-card bg-green-50 border-green-400">
+                    <div className="newspaper-card-content">
+                      <h4 className="newspaper-subhead text-green-800 mb-2">NFT Minted Successfully!</h4>
+                      <p className="newspaper-body text-sm">
+                        Your podcast has been preserved as a Voice NFT on the Aptos blockchain.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <button onClick={resetDebate} className="newspaper-btn-primary">
                   Start New Debate
