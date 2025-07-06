@@ -37,6 +37,8 @@ export default function DebateSystem() {
   const [newAgentName, setNewAgentName] = useState("")
   const [creatingAgent, setCreatingAgent] = useState(false)
   const [createError, setCreateError] = useState("")
+  const [audiogenerated, setAudioGenerated] = useState(false)
+  const [audioUrl, setAudioUrl] = useState("")
   const [debateState, setDebateState] = useState<DebateState>({
     topic: "",
     messages: [],
@@ -44,6 +46,11 @@ export default function DebateSystem() {
     currentRound: 0,
     phase: "setup",
   })
+
+  const [savingDebate, setSavingDebate] = useState(false)
+  const [saveError, setSaveError] = useState("")
+  const [saveSuccess, setSaveSuccess] = useState(false)
+  const [savedLinks, setSavedLinks] = useState<{ json?: string; audio?: string }>({})
 
   const currentDate = new Date().toLocaleDateString("en-US", {
     year: "numeric",
@@ -207,6 +214,97 @@ export default function DebateSystem() {
       currentRound: 0,
       phase: "setup",
     })
+  }
+
+  const saveDebateRecord = async () => {
+    if (!leader1 || !leader2 || debateState.messages.length === 0) return
+
+    setSavingDebate(true)
+    setSaveError("")
+    setSaveSuccess(false)
+
+    try {
+      // Format the debate data with better structure
+      const debateData = {
+        topic: debateState.topic,
+        participants: [leader1.name, leader2.name],
+        timestamp: new Date().toISOString(),
+        dialogue: debateState.messages
+          .filter((msg) => msg.speaker !== "conclusion")
+          .reduce(
+            (acc, msg) => {
+              const speakerName = msg.speaker === "bot1" ? leader1.name : leader2.name
+              acc[speakerName] = acc[speakerName] || []
+              acc[speakerName].push(msg.content)
+              return acc
+            },
+            {} as Record<string, string[]>,
+          ),
+        conclusion: debateState.messages.find((msg) => msg.speaker === "conclusion")?.content || "",
+      }
+
+      console.log("Saving debate data:", debateData)
+
+      // Save JSON to Pinata
+      const jsonResponse = await fetch("/api/save-debate-json", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(debateData),
+      })
+
+      if (!jsonResponse.ok) {
+        const errorData = await jsonResponse.json()
+        throw new Error(errorData.error || "Failed to save debate JSON")
+      }
+
+      const jsonResult = await jsonResponse.json()
+      console.log("JSON saved successfully:", jsonResult)
+
+      // Generate podcast audio
+      console.log("Generating podcast audio...")
+      const audioResponse = await fetch("/api/generate-debate-podcast", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          debateData,
+          leader1Voice: leader1.name,
+          leader2Voice: leader2.name,
+        }),
+      })
+
+      if (!audioResponse.ok) {
+        const errorData = await audioResponse.json()
+        console.error("Audio generation error:", errorData)
+        // Don't throw error here - we still have the JSON saved
+        setSavedLinks({
+          json: jsonResult.ipfsHash,
+        })
+        setSaveSuccess(true)
+        setSaveError("Debate saved successfully, but podcast generation failed. You can still access the transcript.")
+        return
+      }
+
+      const audioResult = await audioResponse.json()
+      console.log("Audio generated successfully:", audioResult)
+      setAudioGenerated(true)
+
+      setAudioUrl(audioResult.filename)
+
+      setSavedLinks({
+        json: jsonResult.ipfsHash,
+        audio: audioResult.ipfsHash,
+      })
+      setSaveSuccess(true)
+    } catch (error: any) {
+      console.error("Error saving debate:", error)
+      setSaveError(error.message || "Failed to save debate record")
+    } finally {
+      setSavingDebate(false)
+    }
   }
 
   const getSpeakerInfo = (speaker: string) => {
@@ -445,7 +543,10 @@ export default function DebateSystem() {
                     </div>
                   </div>
                 </div>
-
+{/* <audio controls>
+        <source src="/debate-podcast-1751752625607.wav" type="audio/wav" />
+        Your browser does not support the audio element.
+      </audio> */}
                 <div className="newspaper-divider"></div>
 
                 {/* Topic Input */}
@@ -649,6 +750,108 @@ export default function DebateSystem() {
           )}
         </div>
       </div>
+
+      {/* Post-Debate Actions */}
+      {debateState.phase === "concluded" && leader1 && leader2 && (
+        <div className="newspaper-card text-center">
+          <div className="newspaper-card-content">
+            <h3 className="newspaper-headline text-xl mb-4">DEBATE CONCLUDED!</h3>
+            <p className="newspaper-body mb-6">
+              This historic discussion between {leader1?.name} and {leader2?.name} about{" "}
+              {debateState.topic.toLowerCase()} is now ready to be preserved for posterity.
+            </p>
+
+            {!saveSuccess ? (
+              <div className="space-y-4">
+                <button
+                  onClick={saveDebateRecord}
+                  disabled={savingDebate}
+                  className="newspaper-btn-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                >
+                  {savingDebate ? (
+                    <div className="flex items-center justify-center space-x-2">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span>Preserving Historical Record...</span>
+                    </div>
+                  ) : (
+                    "Preserve & Create Podcast"
+                  )}
+                </button>
+
+                {saveError && (
+                  <div className="newspaper-card bg-red-50 border-red-400">
+                    <div className="newspaper-card-content">
+                      <p className="text-red-800 newspaper-body text-sm">{saveError}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="newspaper-card bg-green-50 border-green-400">
+                  <div className="newspaper-card-content">
+                    <h4 className="newspaper-subhead text-green-800 mb-3">Successfully Preserved!</h4>
+                    <div className="space-y-3 text-sm">
+                      {savedLinks.json && (
+                        <div className="flex items-center justify-between p-3 bg-white border border-green-300">
+                          <span className="newspaper-body">Debate Transcript (JSON)</span>
+                          <a
+                            href={`https://gateway.pinata.cloud/ipfs/${savedLinks.json}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="newspaper-btn-secondary text-xs py-1 px-3"
+                          >
+                            View Record
+                          </a>
+
+                        </div>
+                      )}
+                      {
+                        audiogenerated && <>
+                          <div className="flex items-center justify-between p-3 bg-white border border-green-300">
+                            <span className="newspaper-body">Debate Podcast (Audio)</span>
+                            <a
+                              href={audioUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="newspaper-btn-secondary text-xs py-1 px-3"
+                            >
+                              Listen
+
+                            </a>
+                            <audio controls>
+        <source src={`${audioUrl}`} type="audio/wav" />
+        Your browser does not support the audio element.
+      </audio>
+                          </div>
+                        
+                        </>
+                      }
+                      {savedLinks.audio && (
+                        <div className="flex items-center justify-between p-3 bg-white border border-green-300">
+                          <span className="newspaper-body">Debate Podcast (Audio)</span>
+                          <a
+                            href={`https://gateway.pinata.cloud/ipfs/${savedLinks.audio}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="newspaper-btn-secondary text-xs py-1 px-3"
+                          >
+                            Listen
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <button onClick={resetDebate} className="newspaper-btn-primary">
+                  Start New Debate
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
