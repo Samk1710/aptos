@@ -30,7 +30,7 @@ export async function POST(request: Request) {
           const conversationHistory: Array<{ speaker: "bot1" | "bot2"; content: string }> = []
 
           // Conduct 10 rounds of debate (20 messages total)
-          for (let round = 1; round <= 2; round++) {
+          for (let round = 1; round <= 8; round++) {
             const isBot1Turn = round % 2 === 1
             const currentBot = isBot1Turn ? "bot1" : "bot2"
             const systemPrompt = isBot1Turn ? prompt1 : prompt2
