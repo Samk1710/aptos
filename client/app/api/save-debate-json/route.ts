@@ -1,17 +1,53 @@
 import { type NextRequest, NextResponse } from "next/server"
 
+export const generateImage = async (prompt:string) => {
+    try {
+            const response = await fetch("https://api.corcel.io/v1/image/vision/text-to-image", {
+            method: 'POST',
+            headers: {
+                accept: 'application/json',
+                'content-type': 'application/json',
+                Authorization: `Bearer 2f5fdc36-e2da-43cc-b8f9-acfb5664619e`,
+            },
+            body: JSON.stringify({
+                cfg_scale: Math.floor(Math.random() * 3) + 2,
+                height: '1024',
+                width: '1024',
+                steps: Math.floor(Math.random() * 8) + 4,
+                engine: 'flux-schnell',
+                text_prompts: [{ text: `generate a pixalated image on this topic ->${prompt}` }],
+            })
+        });
+        const body = await response.json();
+        const url = body.signed_urls[0];
+        return url;
+        
+
+        
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+};
+
+
+
+
 export async function POST(request: NextRequest) {
   try {
     const debateData = await request.json()
-
+    const imgLink=await generateImage(debateData.topic)
     // Create a formatted JSON file with better structure
     const formattedDebateData = {
-      metadata: {
+      
+        name: `Debate on ${debateData.topic}`,
+        description: `A structured debate on the topic: ${debateData.topic}`,
+        image:imgLink || "https://via.placeholder.com/150", // Fallback image if generation fails
         topic: debateData.topic,
         participants: debateData.participants,
         timestamp: debateData.timestamp,
         totalMessages: Object.values(debateData.dialogue).flat().length,
-      },
+      
       dialogue: debateData.dialogue,
       conclusion: debateData.conclusion,
       format_version: "1.0",
@@ -31,7 +67,7 @@ export async function POST(request: NextRequest) {
       keyvalues: {
         type: "debate-transcript",
         participants: debateData.participants.join(", "),
-        
+
         topic: debateData.topic,
         date: new Date().toISOString().split("T")[0],
       },
