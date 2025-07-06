@@ -1,12 +1,13 @@
 [package]
-name = "MessageBoard"
+name = "voice_nft"
 version = "1.0.0"
-authors = []
+authors = ["Samk"]
 
 [addresses]
-message_board_addr = "_"
+voice_nft = "_"
 
 [dependencies]
-AptosFramework = { git = "https://github.com/aptos-labs/aptos-framework.git", rev = "mainnet", subdir = "aptos-framework" }
+AptosFramework = { git = "https://github.com/aptos-labs/aptos-framework.git", rev = "devnet", subdir = "aptos-framework" }
+AptosTokenObjects = { git = "https://github.com/aptos-labs/aptos-framework.git", rev = "devnet", subdir = "aptos-token-objects" }
 
 [dev-dependencies]
