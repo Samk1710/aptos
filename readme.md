@@ -145,4 +145,3 @@ Pull requests and issue discussions are welcome! We're looking for help with:
 
 ---
 
-Let me know if you'd like this styled version exported as a `.md` file or rendered on your app homepage.
