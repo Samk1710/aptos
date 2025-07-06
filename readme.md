@@ -21,6 +21,11 @@
 > 💡 **Theme:** Merging historical insight with modern tech using AI, Web3, and LLMs.
 
 ---
+---
+## Deployed contract address
+```bash
+0x50b567deedef958c0a3ea0caf0255a510268156569a1d8f1c2b84ab25966bbb3
+```
 
 ## 🧠 Features
 
@@ -104,7 +109,10 @@ pnpm dev
 * 🎧 Generate audio: “Churchill vs. Roosevelt on Economic Recovery”
 * 🪙 Mint a session and trade it as a historical collectible on Aptos
 
+
 ---
+
+
 ## 🛡️ Security & Ownership
 
 * Conversations are stored in a decentralized format
